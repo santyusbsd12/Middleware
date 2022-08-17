@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration monitorInterval="300">
+	<Properties>
+		<Property name = "logName">middlewareweb</Property>
+		<Property name = "basePath">/opt/logs/middlewareweb</Property>
+		<Property name = "mainPatternLayout">%d{ISO8601} %-5level [%t] %C{1.}:%L - %msg%n%throwable</Property>
+	</Properties>
+	
+	<Appenders>
+		<Console name="STDOUT" target="SYSTEM_OUT">
+			<PatternLayout pattern="${mainPatternLayout}"/>
+		</Console>
+		
+		<RollingFile name="APP-FILE-APPENDER"
+			fileName = "${basePath}/${logName}.log"
+			filePattern = "${basePath}/old/${logName}.%d{yyyy.MM.dd}.%i.log.gz">
+			<PatternLayout charset="UTF-8">
+				<pattern>${mainPatternLayout}</pattern>
+			</PatternLayout>
+			<Policies>
+				<OnStartupTriggeringPolicy />
+				<!-- Trigger every day at midnigth -->
+				<CronTriggeringPolicy schedule="0 0 0 1/1 * ? *" />
+				<SizeBasedTriggeringPolicy size="100 MB" />
+				<TimeBasedTriggeringPolicy />
+			</Policies>
+			
+			<DefaultRolloverStrategy max="100"
+				stopCustomActionsOnError="true">
+
+				<!-- Custom file permissions for .log an .log.gz files -->
+				<PosixViewAttribute basePath="/opt/old" filePermissions="rw-rw-rw-">
+					<IfFileName glob="*.{log.gz,log}" />
+				</PosixViewAttribute>
+				<!-- Deletes .log and .log.gz files witch are 90 days old or older -->
+				<Delete basePath="${basePath}" maxDepth="2">
+					<IfFileName glob="*/${logName}.*.*.{log.gz,log}">
+						<IfLastModified age="90d" />
+					</IfFileName>
+				</Delete>
+
+			</DefaultRolloverStrategy>
+			
+			
+		</RollingFile>
+		
+	</Appenders>
+	
+	<Loggers>
+
+		<Root level="info">
+			<AppenderRef ref="APP-FILE-APPENDER" />
+<!-- 			<AppenderRef ref="STDOUT" />  -->
+		</Root>
+
+		<Logger name="net.sf.hibernate.type" level="ERROR"
+			additivity="false">
+			<AppenderRef ref="APP-FILE-APPENDER" />
+		</Logger>
+	</Loggers>
+	
+	
+</Configuration>
